@@ -370,10 +370,7 @@ function renderGroupCard(group, advancingThirds) {
   const matches = GROUP_MATCHES.filter(m => m.group === group.id);
   const tableRows = standings(group.id, state.group);
   const card = el('section', { class: 'card group' });
-  card.appendChild(el('h3', {},
-    el('span', {}, `Grupp ${group.id}`),
-    el('span', { class: 'small muted' }, `${matches.filter(m => isFinished(state.group[m.num])).length}/${matches.length}`)
-  ));
+  card.appendChild(el('h3', {}, `Grupp ${group.id}`));
 
   // Matchlista
   const list = el('div', { class: 'matches' });
