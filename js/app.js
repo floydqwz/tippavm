@@ -855,7 +855,7 @@ function renderSummary() {
       )
     );
     app.appendChild(el('section', { class: 'card' },
-      el('h3', {}, 'Mest mål enligt din tippning'),
+      el('h3', {}, 'Flest mål enligt din tippning'),
       list
     ));
   }
