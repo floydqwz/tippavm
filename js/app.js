@@ -286,16 +286,17 @@ function handleRandomClick() {
 function renderProgressBanner() {
   const totalDone = countFinished(state.group) + countFinished(state.ko);
   const total = MATCHES.length;
+  const left = total - totalDone;
   const pct = Math.round(100 * totalDone / total);
   return el('div', { class: 'progress' },
     el('span', {}, `${totalDone} / ${total} matcher tippade`),
     el('div', { class: 'progress-bar' }, el('div', { style: `width: ${pct}%` })),
     el('span', { class: 'small muted' }, `${pct}%`),
-    !readonly && el('button', {
+    !readonly && left > 0 && el('button', {
       class: 'random-btn',
       onclick: handleRandomClick,
       title: 'Slumpa resultat för alla matcher du inte har tippat',
-    }, '🎲 Slumpa otippade')
+    }, `🎲 Slumpa ${left} otippade`)
   );
 }
 
