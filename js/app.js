@@ -264,6 +264,8 @@ async function doInlineRename() {
   renameLocal(oldName, newName);
   state.name = newName;
   showShell();
+  // Vyer kan visa namnet (t.ex. delningslänken på Sammanfattning); rita om.
+  render();
 }
 
 function showSharedBanner() {
