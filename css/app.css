@@ -334,6 +334,19 @@ table.standings .pos { width: 1.5em; color: var(--muted); }
 .notice { padding: 0.75rem 1rem; border-radius: var(--radius-sm); }
 .notice.error { background: #3a1a1a; border: 1px solid #5a2a2a; color: #ffb1b1; }
 .notice.info { background: #1a2a3a; border: 1px solid #2a3a4a; }
+.notice.cta {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+.cta-link {
+  display: inline-block;
+  background: var(--accent); color: #1a1404;
+  border: 1px solid #d39400; font-weight: 700;
+  padding: 0.5rem 0.95rem; border-radius: var(--radius-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.cta-link:hover { background: #ffc746; color: #1a1404; }
 
 @media (max-width: 700px) {
   .topbar { flex-wrap: wrap; }

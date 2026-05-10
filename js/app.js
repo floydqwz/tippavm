@@ -111,7 +111,11 @@ function currentRoute() {
   return { type: 'page', path: '/' };
 }
 
-window.addEventListener('hashchange', () => render());
+window.addEventListener('hashchange', () => {
+  render();
+  // Vid sidbyte: börja från toppen istället för där förra vyn råkat sluta
+  window.scrollTo(0, 0);
+});
 
 // === Render ================================================================
 
@@ -322,9 +326,9 @@ function renderGroups() {
   }
 
   if (allGroupsComplete(state.group)) {
-    app.appendChild(el('div', { class: 'card notice info' },
-      'Alla gruppmatcher tippade! ',
-      el('a', { href: '#/slutspel' }, 'Gå vidare till slutspelet →')
+    app.appendChild(el('div', { class: 'card notice info cta' },
+      el('span', {}, 'Alla gruppmatcher tippade!'),
+      el('a', { href: '#/slutspel', class: 'cta-link' }, 'Gå vidare till slutspelet')
     ));
   }
 }
