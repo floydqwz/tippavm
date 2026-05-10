@@ -844,7 +844,7 @@ function renderSummary() {
       el('thead', {}, el('tr', {},
         el('th', { class: 'pos' }, '#'),
         el('th', { class: 'team-cell' }, 'Lag'),
-        el('th', {}, 'Mål totalt')
+        el('th', {}, 'Mål')
       )),
       el('tbody', {},
         ...top.map((r, i) => el('tr', {},
