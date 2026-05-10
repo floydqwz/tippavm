@@ -122,7 +122,7 @@ function modalPrompt(message, defaultValue = '', opts = {}) {
   const cancelLabel = opts.cancelLabel || 'Avbryt';
   return new Promise(resolve => {
     let dlg, result = null;
-    const inp = el('input', { type: 'text', value: defaultValue });
+    const inp = el('input', { type: 'text', value: defaultValue, 'aria-label': message });
     const body = el('div', {},
       el('p', {}, message),
       inp
@@ -477,6 +477,7 @@ function renderProgressBanner() {
 function renderGroups() {
   const app = $('#app');
   app.innerHTML = ''; if (readonly) showSharedBanner();
+  app.appendChild(el('h2', { class: 'sr-only' }, 'Gruppspel'));
 
   { const pb = renderProgressBanner(); if (pb) app.appendChild(pb); }
 
@@ -570,12 +571,15 @@ function renderGroupMatch(m) {
 }
 
 function makeScoreInput(m, side, value) {
+  const scoring = side === 'home' ? m.home : m.away;
+  const opponent = side === 'home' ? m.away : m.home;
   const input = el('input', {
     class: 'score',
     type: 'number',
     min: '0', max: '9',
     inputmode: 'numeric',
     value: value === '' || value == null ? '' : String(value),
+    'aria-label': `${teamName(scoring)}s mål mot ${teamName(opponent)}`,
     'data-num': m.num,
     'data-side': side,
   });
@@ -766,6 +770,7 @@ const BRACKET_ORDER = {
 function renderKnockout() {
   const app = $('#app');
   app.innerHTML = ''; if (readonly) showSharedBanner();
+  app.appendChild(el('h2', { class: 'sr-only' }, 'Slutspel'));
 
   { const pb = renderProgressBanner(); if (pb) app.appendChild(pb); }
 
@@ -906,12 +911,14 @@ function makeKoRow(m, side, team, label, winner, value) {
   } else {
     teamCell.appendChild(el('span', { class: 'nm' }, label || '—'));
   }
+  const teamLabel = known ? teamName(team) : (label || `lag ${side}`);
   const inp = el('input', {
     class: 'score',
     type: 'number',
     min: '0', max: '9',
     inputmode: 'numeric',
     value: value === '' || value == null ? '' : String(value),
+    'aria-label': `${teamLabel}s mål, match ${m.num}`,
     'data-num': m.num,
     'data-side': side,
   });
@@ -935,7 +942,7 @@ function renderShareCard() {
         ? `Länken visar dina ${totalDone} av ${total} tippade matcher just nu. Tippar du fler matcher senare behöver du kopiera en ny länk.`
         : 'Skicka länken till en kompis så kan de se exakt hur du har tippat.'),
     el('div', { class: 'share-box' },
-      el('input', { type: 'text', readonly: true, value: url, onclick: (e) => e.target.select() }),
+      el('input', { type: 'text', readonly: true, value: url, 'aria-label': 'Delningslänk', onclick: (e) => e.target.select() }),
       el('button', {
         class: 'primary',
         onclick: async (e) => {
@@ -951,6 +958,7 @@ function renderShareCard() {
 function renderSummary() {
   const app = $('#app');
   app.innerHTML = ''; if (readonly) showSharedBanner();
+  app.appendChild(el('h2', { class: 'sr-only' }, 'Sammanfattning'));
 
   // I delad vy: byt fokus från "din tippning" till "{ägare}s tippning".
   const ownerLabel = readonly && sharedFromName ? sharedFromName : null;
