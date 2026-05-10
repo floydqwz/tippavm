@@ -126,13 +126,39 @@ button.primary:hover { background: #ffc746; }
 table.standings {
   width: 100%; border-collapse: collapse; font-size: 0.85rem;
   margin-top: 0.6rem;
+  table-layout: fixed;
 }
 table.standings th, table.standings td {
   padding: 0.25rem 0.4rem; text-align: right; border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
 table.standings th { color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
 table.standings td.team-cell, table.standings th.team-cell { text-align: left; }
-table.standings .team-cell .fi { width: 1.6em; height: 1.2em; vertical-align: middle; margin-right: 0.4rem; border-radius: 2px; }
+table.standings .team-cell { display: flex; align-items: center; gap: 0.4rem; min-width: 0; }
+table.standings .team-cell .fi { width: 1.6em; height: 1.2em; border-radius: 2px; flex-shrink: 0; }
+table.standings .team-cell .tn {
+  min-width: 0; flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Kolumnbredder. team-cell tar resten via auto. */
+table.standings .pos { width: 1.6em; }
+table.standings th:not(.team-cell):not(.pos),
+table.standings td:not(.team-cell):not(.pos) { width: 2em; }
+/* +/- kan vara tre tecken (t.ex. "+12" eller "-9") så ge den lite mer */
+table.standings th:nth-last-child(2),
+table.standings td:nth-last-child(2) { width: 2.4em; }
+table.thirds-table th:nth-child(2), table.thirds-table td:nth-child(2) { width: 2.8em; } /* "Grupp" */
+
+/* På smala skärmar: dölj V, O, F i gruppspels-tabellen för att ge utrymme åt
+   lagnamn (treornas tabell behåller alla sina kolumner). */
+@media (max-width: 700px) {
+  table.standings:not(.thirds-table) th:nth-child(4),
+  table.standings:not(.thirds-table) td:nth-child(4),
+  table.standings:not(.thirds-table) th:nth-child(5),
+  table.standings:not(.thirds-table) td:nth-child(5),
+  table.standings:not(.thirds-table) th:nth-child(6),
+  table.standings:not(.thirds-table) td:nth-child(6) { display: none; }
+}
 table.standings tr.qualified td { color: var(--win); }
 table.standings tr.third td { color: var(--accent); }
 table.standings tr.eliminated td { color: var(--muted); }

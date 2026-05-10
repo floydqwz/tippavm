@@ -355,7 +355,7 @@ function renderThirdsCard(ranking) {
     body.appendChild(el('tr', { class: cls },
       el('td', { class: 'pos' }, String(i+1)),
       el('td', {}, r.group),
-      el('td', { class: 'team-cell' }, flag(r.team), teamName(r.team)),
+      el('td', { class: 'team-cell' }, flag(r.team), el('span', { class: 'tn' }, teamName(r.team))),
       el('td', {}, String(r.pts)),
       el('td', {}, (r.gd > 0 ? '+' : '') + r.gd),
       el('td', {}, String(r.gf))
@@ -513,7 +513,7 @@ function renderStandingsTable(rows, advancingThirds, groupId) {
     } else cls = 'eliminated';
     body.appendChild(el('tr', { class: cls },
       el('td', { class: 'pos' }, String(i+1)),
-      el('td', { class: 'team-cell' }, flag(r.team), teamName(r.team)),
+      el('td', { class: 'team-cell' }, flag(r.team), el('span', { class: 'tn' }, teamName(r.team))),
       el('td', {}, String(r.mp)),
       el('td', {}, String(r.w)),
       el('td', {}, String(r.d)),
@@ -819,7 +819,7 @@ function renderSummary() {
       el('tbody', {},
         ...top.map((r, i) => el('tr', {},
           el('td', { class: 'pos' }, String(i+1)),
-          el('td', { class: 'team-cell' }, flag(r.team), teamName(r.team)),
+          el('td', { class: 'team-cell' }, flag(r.team), el('span', { class: 'tn' }, teamName(r.team))),
           el('td', {}, String(r.goals))
         ))
       )
