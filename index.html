@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VM 2026 — tippa hela mästerskapet</title>
+  <link rel="stylesheet" href="css/flag-icons.min.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="js/lz-string.min.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="#/" title="Till startsidan">
+    <span class="logo">⚽</span>
+    <h1>VM 2026 — Tippa</h1>
+  </a>
+  <nav class="tabs" id="nav" hidden>
+    <a href="#/grupper" data-tab="grupper">Gruppspel</a>
+    <a href="#/slutspel" data-tab="slutspel">Slutspel</a>
+    <a href="#/sammanfattning" data-tab="sammanfattning">Sammanfattning</a>
+  </nav>
+  <div class="who" id="who" hidden></div>
+</header>
+
+<main id="app"></main>
+
+<template id="tpl-start">
+  <section class="card start">
+    <h2>Välkommen!</h2>
+    <p>Tippa alla 104 matcher i fotbolls-VM 2026 — gruppspel och hela vägen till finalen.
+       Dina tippar sparas i din webbläsare och du kan när som helst dela en länk så att vänner ser dem.</p>
+    <form id="start-form" class="form-grid">
+      <label>Vad heter du?
+        <input type="text" name="name" required maxlength="40" placeholder="t.ex. Markus">
+      </label>
+      <button type="submit" class="primary">Börja tippa</button>
+    </form>
+    <p class="muted small">Din tippning sparas i den här webbläsaren under det namn du anger. När du är nöjd kan du dela en länk så att andra ser hur du tippat.</p>
+  </section>
+</template>
+
+<template id="tpl-shared">
+  <section class="card shared-banner">
+    <h2>Du tittar på <span class="owner-name"></span>s tippning</h2>
+    <p>Den här vyn är skrivskyddad. Vill du tippa själv?</p>
+    <div class="actions">
+      <button class="primary" id="fork-btn">Skapa min egen tippning</button>
+      <button id="copy-link-btn">Kopiera länken</button>
+    </div>
+  </section>
+</template>
+
+<footer class="footer">
+  <span>Schemadata från <a href="https://github.com/openfootball/worldcup.json" target="_blank" rel="noopener">openfootball/worldcup.json</a> · Flaggor från <a href="https://github.com/lipis/flag-icons" target="_blank" rel="noopener">flag-icons</a></span>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
