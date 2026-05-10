@@ -487,7 +487,7 @@ function makeScoreInput(m, side, value) {
   const input = el('input', {
     class: 'score',
     type: 'number',
-    min: '0', max: '20',
+    min: '0', max: '9',
     inputmode: 'numeric',
     value: value === '' || value == null ? '' : String(value),
     'data-num': m.num,
@@ -498,14 +498,12 @@ function makeScoreInput(m, side, value) {
   return input;
 }
 
-let advanceTimer = null;
-
 function onScoreInput(e) {
   if (readonly) return;
   const num = parseInt(e.target.dataset.num, 10);
   const side = e.target.dataset.side;
   const raw = e.target.value;
-  const val = raw === '' ? null : Math.max(0, Math.min(20, parseInt(raw, 10) || 0));
+  const val = raw === '' ? null : Math.max(0, Math.min(9, parseInt(raw, 10) || 0));
 
   const isGroup = MATCHES.find(x => x.num === num).stage === 'GROUP';
   const bucket = isGroup ? state.group : state.ko;
@@ -515,21 +513,9 @@ function onScoreInput(e) {
   else bucket[num] = updated;
   scheduleSave();
 
-  // Auto-fokus: när användaren skrivit en siffra (0–9) hoppar vi vidare till
-  // nästa scoreruta efter en kort paus. Pausen ger plats för tvåsiffriga
-  // resultat (10+); skriver man en till siffra inom 250 ms återställs timern.
-  if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
-  if (/^[0-9]$/.test(raw)) {
-    advanceTimer = setTimeout(() => {
-      // Hoppa bara om användaren fortfarande står kvar i samma ruta
-      // (annars klev de vidare själva och vi vill inte bråka).
-      const a = document.activeElement;
-      if (a && a.classList && a.classList.contains('score')
-          && a.dataset.num === String(num) && a.dataset.side === side) {
-        focusNextScore(num, side);
-      }
-    }, 250);
-  }
+  // Auto-fokus: hoppa direkt till nästa scoreruta när en siffra angetts.
+  // Vi stödjer bara 0–9 så det finns ingen anledning att vänta in fler siffror.
+  const shouldAdvance = /^[0-9]$/.test(raw);
 
   // Re-render only the affected group card (for live standings)
   if (isGroup) {
@@ -540,6 +526,8 @@ function onScoreInput(e) {
     // Slutspel: rendera om hela slutspelsvyn för att propagera
     rerenderKnockout();
   }
+
+  if (shouldAdvance) focusNextScore(num, side);
 }
 
 function focusNextScore(num, side) {
@@ -835,7 +823,7 @@ function makeKoRow(m, side, team, label, winner, value) {
   const inp = el('input', {
     class: 'score',
     type: 'number',
-    min: '0', max: '20',
+    min: '0', max: '9',
     inputmode: 'numeric',
     value: value === '' || value == null ? '' : String(value),
     'data-num': m.num,
