@@ -127,8 +127,7 @@ function render() {
       $('#app').innerHTML = '';
       $('#app').appendChild(el('div', { class: 'card notice error' }, 'Ogiltig delningslänk. ',
         el('a', { href: '#/' }, 'Tillbaka till start')));
-      $('#nav').hidden = true;
-      $('#who').hidden = true;
+      showShell();
       return;
     }
     state = decoded;
@@ -136,35 +135,68 @@ function render() {
     readonly = true;
     showShell();
     showSharedBanner();
-    renderGroups(); // standardvy för delning
+    renderGroups();
     return;
   }
-  // Vanlig sidvisning — när vi lämnar delningsläge nollställer vi readonly.
-  if (route.path !== undefined && route.type === 'page') {
+  if (route.type === 'page') {
     readonly = false;
     sharedFromName = null;
   }
-  if (!state.name || route.path === '/') {
-    showShell(false);
+  // Startsidan visar formuläret, övriga vyer fungerar även utan satt namn –
+  // vi auto-initierar då en tippning under ett standardnamn så användaren
+  // kan börja tippa direkt och döpa om sin tippning när som helst.
+  if (route.path === '/') {
+    showShell();
     renderStart();
     highlightTab('/');
     return;
   }
-  showShell(true);
-  const fn = routes[route.path] || renderStart;
+  if (!state.name) ensureDefaultState();
+  showShell();
+  const fn = routes[route.path] || renderGroups;
   fn();
   highlightTab(route.path);
 }
 
-function showShell(loggedIn = true) {
-  $('#nav').hidden = !loggedIn;
-  $('#who').hidden = !loggedIn;
-  if (loggedIn) {
-    const who = $('#who');
-    who.innerHTML = '';
-    who.appendChild(el('span', {}, 'Tippar som: ', el('span', { class: 'name' }, state.name)));
+function ensureDefaultState() {
+  const defaultName = 'Min tippning';
+  state = loadLocal(defaultName) || emptyState(defaultName);
+  state.name = defaultName;
+  saveLocal(state);
+}
+
+function showShell() {
+  // Tabs alltid synliga; "who"-delen visar ett namn när vi har ett.
+  const who = $('#who');
+  who.innerHTML = '';
+  if (state.name) {
+    const nameEl = readonly
+      ? el('span', { class: 'name' }, state.name)
+      : el('button', {
+          class: 'name-link',
+          onclick: doInlineRename,
+          title: 'Klicka för att byta namn på tippningen',
+        }, state.name);
+    who.appendChild(el('span', {}, 'Tippar som: ', nameEl));
     if (readonly) who.appendChild(el('span', { class: 'badge' }, 'delad'));
   }
+}
+
+function doInlineRename() {
+  if (readonly || !state.name) return;
+  const oldName = state.name;
+  const raw = prompt('Nytt namn för din tippning:', oldName);
+  if (raw == null) return;
+  const newName = raw.trim();
+  if (!newName) { alert('Namnet får inte vara tomt.'); return; }
+  if (newName === oldName) return;
+  if (existsLocal(newName)) {
+    alert(`Namnet "${newName}" är redan upptaget.`);
+    return;
+  }
+  renameLocal(oldName, newName);
+  state.name = newName;
+  showShell();
 }
 
 function showSharedBanner() {
