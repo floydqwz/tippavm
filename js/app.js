@@ -755,9 +755,9 @@ function renderKnockout() {
   app.appendChild(renderProgressBanner());
 
   if (!allGroupsComplete(state.group)) {
-    app.appendChild(el('div', { class: 'card notice info' },
-      'Du måste tippa färdigt alla gruppmatcher innan slutspelet kan börja. ',
-      el('a', { href: '#/grupper' }, 'Gå till gruppspelet')
+    app.appendChild(el('div', { class: 'card notice info cta' },
+      el('span', {}, 'Du måste tippa färdigt alla gruppmatcher innan slutspelet kan börja.'),
+      el('a', { href: '#/grupper', class: 'cta-link' }, 'Gå till gruppspelet')
     ));
     return;
   }
