@@ -1,6 +1,11 @@
 // Slutspelslogik: tabeller per grupp, rankning av treor, slutspelsträd.
 import { GROUPS, GROUP_MATCHES, KO_MATCHES } from './schedule.js';
 
+// En tippning räknas inte förrän båda målen är ifyllda.
+export function isFinished(p) {
+  return Array.isArray(p) && typeof p[0] === 'number' && typeof p[1] === 'number';
+}
+
 // FIFA:s slot-allokering för de 8 bästa treorna i Round of 32.
 // Kombinationen av vilka 8 grupper (av A-L) som skickar en trea
 // avgör vilken match varje trea hamnar i. Tabell hämtad från FIFA:s
@@ -59,7 +64,7 @@ function headToHead(teams, predictions, groupMatches) {
   for (const m of groupMatches) {
     if (!set.has(m.home) || !set.has(m.away)) continue;
     const p = predictions[m.num];
-    if (!p) continue;
+    if (!isFinished(p)) continue;
     applyMatch(rows[m.home], rows[m.away], p[0], p[1]);
   }
   return rows;
@@ -71,7 +76,7 @@ export function standings(groupId, predictions) {
   const rows = Object.fromEntries(group.teams.map(t => [t, emptyRow(t)]));
   for (const m of groupMatches) {
     const p = predictions[m.num];
-    if (!p) continue;
+    if (!isFinished(p)) continue;
     applyMatch(rows[m.home], rows[m.away], p[0], p[1]);
   }
   const all = Object.values(rows);
@@ -94,7 +99,7 @@ export function standings(groupId, predictions) {
       const teams = block.map(r => r.team);
       const teamSet = new Set(teams);
       const blockMatches = groupMatches.filter(m => teamSet.has(m.home) && teamSet.has(m.away));
-      const allPlayed = blockMatches.every(m => predictions[m.num]);
+      const allPlayed = blockMatches.every(m => isFinished(predictions[m.num]));
       if (allPlayed) {
         const h2h = headToHead(teams, predictions, groupMatches);
         block.sort((a, b) => {
@@ -112,7 +117,7 @@ export function standings(groupId, predictions) {
 
 export function isGroupComplete(groupId, predictions) {
   const ms = GROUP_MATCHES.filter(m => m.group === groupId);
-  return ms.every(m => predictions[m.num]);
+  return ms.every(m => isFinished(predictions[m.num]));
 }
 
 export function allGroupsComplete(predictions) {
@@ -248,7 +253,7 @@ export function resolveKnockout(predictions) {
     const pen = predictions[m.num + 'p']; // tie-break-vinnare-kod
 
     let winner = null;
-    if (pred) {
+    if (isFinished(pred)) {
       if (pred[0] > pred[1]) winner = home;
       else if (pred[1] > pred[0]) winner = away;
       else winner = pen || null; // user must pick on draw

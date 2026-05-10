@@ -1,5 +1,9 @@
 import { TEAMS, GROUPS, GROUP_MATCHES, KO_MATCHES, MATCHES } from './schedule.js';
-import { standings, isGroupComplete, allGroupsComplete, resolveKnockout, thirdPlaceRanking } from './bracket.js';
+import { standings, isGroupComplete, allGroupsComplete, resolveKnockout, thirdPlaceRanking, isFinished } from './bracket.js';
+
+function countFinished(bucket) {
+  return Object.values(bucket).filter(isFinished).length;
+}
 import { emptyState, loadLocal, saveLocal, encodeShare, decodeShare, shareUrl, copyToClipboard, listLocal } from './share.js';
 
 // === Hjälp =================================================================
@@ -240,7 +244,7 @@ function randomFillUntipped() {
   if (readonly) return 0;
   let n = 0;
   for (const m of GROUP_MATCHES) {
-    if (!state.group[m.num]) {
+    if (!isFinished(state.group[m.num])) {
       state.group[m.num] = [randomGoals(), randomGoals()];
       n++;
     }
@@ -249,7 +253,7 @@ function randomFillUntipped() {
   // ev. behöver välja straffvinnare för att låsa winner till nästa rond.
   const koSorted = KO_MATCHES.slice().sort((a, b) => a.num - b.num);
   for (const m of koSorted) {
-    if (!state.ko[m.num]) {
+    if (!isFinished(state.ko[m.num])) {
       state.ko[m.num] = [randomGoals(), randomGoals()];
       n++;
     }
@@ -267,8 +271,8 @@ function randomFillUntipped() {
 }
 
 function handleRandomClick() {
-  const groupLeft = GROUP_MATCHES.length - Object.keys(state.group).length;
-  const koLeft = KO_MATCHES.length - Object.keys(state.ko).length;
+  const groupLeft = GROUP_MATCHES.length - countFinished(state.group);
+  const koLeft = KO_MATCHES.length - countFinished(state.ko);
   const total = groupLeft + koLeft;
   if (total === 0) {
     alert('Allt är redan tippat!');
@@ -280,7 +284,7 @@ function handleRandomClick() {
 }
 
 function renderProgressBanner() {
-  const totalDone = Object.keys(state.group).length + Object.keys(state.ko).length;
+  const totalDone = countFinished(state.group) + countFinished(state.ko);
   const total = MATCHES.length;
   const pct = Math.round(100 * totalDone / total);
   return el('div', { class: 'progress' },
@@ -367,7 +371,7 @@ function renderGroupCard(group, advancingThirds) {
   const card = el('section', { class: 'card group' });
   card.appendChild(el('h3', {},
     el('span', {}, `Grupp ${group.id}`),
-    el('span', { class: 'small muted' }, `${matches.filter(m => state.group[m.num]).length}/${matches.length}`)
+    el('span', { class: 'small muted' }, `${matches.filter(m => isFinished(state.group[m.num])).length}/${matches.length}`)
   ));
 
   // Matchlista
@@ -471,7 +475,7 @@ function restoreFocus(key) {
 }
 
 function updateGroupProgress() {
-  const filled = Object.keys(state.group).length + Object.keys(state.ko).length;
+  const filled = countFinished(state.group) + countFinished(state.ko);
   const total = MATCHES.length;
   const pct = Math.round(100 * filled / total);
   const prog = $('.progress');
@@ -839,7 +843,7 @@ function computeGoalTotals() {
   // Gruppspel
   for (const m of GROUP_MATCHES) {
     const p = state.group[m.num];
-    if (!p) continue;
+    if (!isFinished(p)) continue;
     goals[m.home] = (goals[m.home] || 0) + p[0];
     goals[m.away] = (goals[m.away] || 0) + p[1];
   }
@@ -847,7 +851,7 @@ function computeGoalTotals() {
   const resolved = resolveKnockout({ ...state.group, ...state.ko, ...prefixedPen() });
   for (const m of KO_MATCHES) {
     const p = state.ko[m.num];
-    if (!p) continue;
+    if (!isFinished(p)) continue;
     const r = resolved[m.num];
     if (!r || !r.home || !r.away) continue;
     goals[r.home] = (goals[r.home] || 0) + p[0];
