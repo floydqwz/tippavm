@@ -3,9 +3,19 @@
 // Lagras i localStorage per namn, kan kodas till en URL för delning.
 
 const STORAGE_PREFIX = 'vm2026:';
+const ACTIVE_KEY = STORAGE_PREFIX + '_active';
 
 export function emptyState(name = '') {
   return { name, group: {}, ko: {}, pen: {} };
+}
+
+export function getActive() {
+  return localStorage.getItem(ACTIVE_KEY);
+}
+
+export function setActive(name) {
+  if (name) localStorage.setItem(ACTIVE_KEY, name);
+  else localStorage.removeItem(ACTIVE_KEY);
 }
 
 export function loadLocal(name) {
@@ -21,6 +31,7 @@ export function saveLocal(state) {
   if (!state.name) return;
   try {
     localStorage.setItem(STORAGE_PREFIX + state.name, JSON.stringify(state));
+    setActive(state.name);
   } catch (e) {
     console.warn('Kunde inte spara lokalt:', e);
   }
@@ -30,7 +41,7 @@ export function listLocal() {
   const out = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith(STORAGE_PREFIX)) {
+    if (key && key.startsWith(STORAGE_PREFIX) && key !== ACTIVE_KEY) {
       out.push(key.slice(STORAGE_PREFIX.length));
     }
   }
@@ -43,6 +54,7 @@ export function existsLocal(name) {
 
 export function removeLocal(name) {
   localStorage.removeItem(STORAGE_PREFIX + name);
+  if (getActive() === name) setActive(null);
 }
 
 export function renameLocal(oldName, newName) {

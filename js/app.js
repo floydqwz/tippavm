@@ -4,7 +4,7 @@ import { standings, isGroupComplete, allGroupsComplete, resolveKnockout, thirdPl
 function countFinished(bucket) {
   return Object.values(bucket).filter(isFinished).length;
 }
-import { emptyState, loadLocal, saveLocal, encodeShare, decodeShare, shareUrl, copyToClipboard, listLocal, existsLocal, removeLocal, renameLocal, copyLocal } from './share.js';
+import { emptyState, loadLocal, saveLocal, encodeShare, decodeShare, shareUrl, copyToClipboard, listLocal, existsLocal, removeLocal, renameLocal, copyLocal, getActive, setActive } from './share.js';
 
 // === Hjälp =================================================================
 
@@ -226,6 +226,13 @@ function render() {
 }
 
 function ensureDefaultState() {
+  // Hämta senast aktiva tippning först (för att överleva omladdning),
+  // annars fall tillbaka till standardnamnet "Min tippning".
+  const active = getActive();
+  if (active) {
+    const s = loadLocal(active);
+    if (s) { state = s; state.name = active; return; }
+  }
   const defaultName = 'Min tippning';
   state = loadLocal(defaultName) || emptyState(defaultName);
   state.name = defaultName;
@@ -304,6 +311,7 @@ function renderSavedRow(name) {
     state = loadLocal(name) || emptyState(name);
     state.name = name;
     readonly = false;
+    setActive(name);
     go('/grupper');
   };
   const askName = async (text, defaultVal) => {
@@ -381,6 +389,7 @@ function renderStart() {
     state = existing || emptyState(name);
     state.name = name;
     readonly = false;
+    saveLocal(state);
     go('/grupper');
   });
 }
