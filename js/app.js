@@ -162,7 +162,10 @@ function showShell(loggedIn = true) {
 function showSharedBanner() {
   const tpl = $('#tpl-shared').content.cloneNode(true);
   const sect = tpl.querySelector('section');
-  sect.querySelector('.owner-name').textContent = sharedFromName || 'någon';
+  const owner = sharedFromName || 'någon';
+  // Svenskt genitiv: namn på s/x/z får inget extra s ("Markus tippning", inte "Markuss")
+  const suffix = /[sxzSXZ]$/.test(owner) ? '' : 's';
+  sect.querySelector('.shared-title').textContent = `Du tittar på ${owner}${suffix} tippning`;
   sect.querySelector('#fork-btn').addEventListener('click', () => {
     if (!confirm('Skapa en egen kopia av den här tippningen att redigera?')) return;
     const newName = prompt('Vad heter du?', '');
@@ -219,21 +222,86 @@ function renderStart() {
   });
 }
 
+// --- Slumpa --------------------------------------------------------------
+
+// Vikter ungefär kalibrerade mot historisk VM-statistik (~1.4 mål per lag/match).
+function randomGoals() {
+  const r = Math.random();
+  if (r < 0.22) return 0;
+  if (r < 0.55) return 1;
+  if (r < 0.80) return 2;
+  if (r < 0.92) return 3;
+  if (r < 0.97) return 4;
+  if (r < 0.99) return 5;
+  return 6;
+}
+
+function randomFillUntipped() {
+  if (readonly) return 0;
+  let n = 0;
+  for (const m of GROUP_MATCHES) {
+    if (!state.group[m.num]) {
+      state.group[m.num] = [randomGoals(), randomGoals()];
+      n++;
+    }
+  }
+  // Slutspel i num-ordning så att en match har lösta hemma/borta innan vi
+  // ev. behöver välja straffvinnare för att låsa winner till nästa rond.
+  const koSorted = KO_MATCHES.slice().sort((a, b) => a.num - b.num);
+  for (const m of koSorted) {
+    if (!state.ko[m.num]) {
+      state.ko[m.num] = [randomGoals(), randomGoals()];
+      n++;
+    }
+    const p = state.ko[m.num];
+    if (p[0] === p[1] && !state.pen[m.num]) {
+      const r = resolveKnockout({ ...state.group, ...state.ko, ...prefixedPen() });
+      const slot = r[m.num];
+      if (slot && slot.home && slot.away) {
+        state.pen[m.num] = Math.random() < 0.5 ? slot.home : slot.away;
+      }
+    }
+  }
+  scheduleSave();
+  return n;
+}
+
+function handleRandomClick() {
+  const groupLeft = GROUP_MATCHES.length - Object.keys(state.group).length;
+  const koLeft = KO_MATCHES.length - Object.keys(state.ko).length;
+  const total = groupLeft + koLeft;
+  if (total === 0) {
+    alert('Allt är redan tippat!');
+    return;
+  }
+  if (!confirm(`Slumpa resultat för ${total} otippade matcher?`)) return;
+  randomFillUntipped();
+  render();
+}
+
+function renderProgressBanner() {
+  const totalDone = Object.keys(state.group).length + Object.keys(state.ko).length;
+  const total = MATCHES.length;
+  const pct = Math.round(100 * totalDone / total);
+  return el('div', { class: 'progress' },
+    el('span', {}, `${totalDone} / ${total} matcher tippade`),
+    el('div', { class: 'progress-bar' }, el('div', { style: `width: ${pct}%` })),
+    el('span', { class: 'small muted' }, `${pct}%`),
+    !readonly && el('button', {
+      class: 'random-btn',
+      onclick: handleRandomClick,
+      title: 'Slumpa resultat för alla matcher du inte har tippat',
+    }, '🎲 Slumpa otippade')
+  );
+}
+
 // --- Gruppspel -------------------------------------------------------------
 
 function renderGroups() {
   const app = $('#app');
   if (!readonly) app.innerHTML = '';
 
-  // Progress
-  const filled = Object.keys(state.group).length;
-  const total = GROUP_MATCHES.length;
-  const pct = Math.round(100 * filled / total);
-  app.appendChild(el('div', { class: 'progress' },
-    el('span', {}, `Gruppspel: ${filled} / ${total} matcher tippade`),
-    el('div', { class: 'progress-bar' }, el('div', { style: `width: ${pct}%` })),
-    el('span', { class: 'small muted' }, `${pct}%`)
-  ));
+  app.appendChild(renderProgressBanner());
 
   const ranking = thirdPlaceRanking(state.group);
   const advancingThirds = ranking ? new Set(ranking.slice(0, 8).map(r => r.group)) : null;
@@ -403,12 +471,12 @@ function restoreFocus(key) {
 }
 
 function updateGroupProgress() {
-  const filled = Object.keys(state.group).length;
-  const total = GROUP_MATCHES.length;
+  const filled = Object.keys(state.group).length + Object.keys(state.ko).length;
+  const total = MATCHES.length;
   const pct = Math.round(100 * filled / total);
   const prog = $('.progress');
   if (!prog) return;
-  prog.querySelector('span').textContent = `Gruppspel: ${filled} / ${total} matcher tippade`;
+  prog.querySelector('span').textContent = `${filled} / ${total} matcher tippade`;
   prog.querySelector('.progress-bar > div').style.width = pct + '%';
   prog.querySelector('.small').textContent = pct + '%';
 }
@@ -509,6 +577,8 @@ const BRACKET_ORDER = {
 function renderKnockout() {
   const app = $('#app');
   if (!readonly) app.innerHTML = '';
+
+  app.appendChild(renderProgressBanner());
 
   if (!allGroupsComplete(state.group)) {
     app.appendChild(el('div', { class: 'card notice info' },
