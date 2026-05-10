@@ -928,13 +928,13 @@ function renderSummary() {
       el('thead', {}, el('tr', {},
         el('th', { class: 'pos' }, '#'),
         el('th', { class: 'team-cell' }, 'Lag'),
-        el('th', {}, 'Mål')
+        el('th', { class: 'goals' }, 'Mål')
       )),
       el('tbody', {},
         ...top.map((r, i) => el('tr', {},
           el('td', { class: 'pos' }, String(i+1)),
           el('td', { class: 'team-cell' }, flag(r.team), el('span', { class: 'tn' }, teamName(r.team))),
-          el('td', {}, String(r.goals))
+          el('td', { class: 'goals' }, String(r.goals))
         ))
       )
     );
