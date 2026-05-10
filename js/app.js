@@ -770,13 +770,40 @@ function makeKoRow(m, side, team, label, winner, value) {
 
 // --- Sammanfattning --------------------------------------------------------
 
+function renderShareCard() {
+  const url = shareUrl(state);
+  const totalDone = countFinished(state.group) + countFinished(state.ko);
+  const total = MATCHES.length;
+  return el('section', { class: 'card' },
+    el('h3', {}, 'Dela din tippning'),
+    el('p', { class: 'muted small' },
+      totalDone < total
+        ? `Länken visar dina ${totalDone} av ${total} tippade matcher just nu. Tippar du fler matcher senare behöver du kopiera en ny länk.`
+        : 'Skicka länken till en kompis så kan de se exakt hur du har tippat.'),
+    el('div', { class: 'share-box' },
+      el('input', { type: 'text', readonly: true, value: url, onclick: (e) => e.target.select() }),
+      el('button', {
+        class: 'primary',
+        onclick: async (e) => {
+          const ok = await copyToClipboard(url);
+          e.target.textContent = ok ? 'Kopierad!' : 'Misslyckades';
+          setTimeout(() => e.target.textContent = 'Kopiera länk', 1500);
+        }
+      }, 'Kopiera länk')
+    )
+  );
+}
+
 function renderSummary() {
   const app = $('#app');
   if (!readonly) app.innerHTML = '';
 
+  // Dela-länk — alltid tillgänglig, även för halvtippade brackets.
+  if (!readonly) app.appendChild(renderShareCard());
+
   if (!allGroupsComplete(state.group)) {
     app.appendChild(el('div', { class: 'card notice info' },
-      'Tippa klart gruppspelet och slutspelet först — sedan visas en sammanfattning här.'));
+      'Tippa klart gruppspelet och slutspelet så visas världsmästaren och pallen här.'));
     return;
   }
 
@@ -815,26 +842,6 @@ function renderSummary() {
       'Tippa klart hela slutspelet (inklusive finalen) för att se vem du tror blir världsmästare.'));
   }
 
-  // Dela-länk
-  if (!readonly) {
-    const url = shareUrl(state);
-    const shareCard = el('section', { class: 'card' },
-      el('h3', {}, 'Dela din tippning'),
-      el('p', { class: 'muted small' }, 'Skicka länken till en kompis så kan de se exakt hur du har tippat.'),
-      el('div', { class: 'share-box' },
-        el('input', { type: 'text', readonly: true, value: url, onclick: (e) => e.target.select() }),
-        el('button', {
-          class: 'primary',
-          onclick: async (e) => {
-            const ok = await copyToClipboard(url);
-            e.target.textContent = ok ? 'Kopierad!' : 'Misslyckades';
-            setTimeout(() => e.target.textContent = 'Kopiera länk', 1500);
-          }
-        }, 'Kopiera länk')
-      )
-    );
-    app.appendChild(shareCard);
-  }
 
   // Statistik
   const totals = computeGoalTotals();
