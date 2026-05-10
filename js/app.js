@@ -73,6 +73,73 @@ function fmtVenue(v) {
   return v.replace(/\s*\([^)]*\)\s*$/, '');
 }
 
+// === Modaler =============================================================
+// Använder <dialog> för bra fokus/tangentbordshantering. ESC stänger automatiskt.
+
+function buildModal(bodyNode, buttons) {
+  const dlg = el('dialog', { class: 'modal' });
+  dlg.appendChild(bodyNode);
+  const actions = el('div', { class: 'modal-actions' });
+  buttons.forEach(b => actions.appendChild(b));
+  dlg.appendChild(actions);
+  document.body.appendChild(dlg);
+  return dlg;
+}
+
+function modalAlert(message) {
+  return new Promise(resolve => {
+    let dlg;
+    const okBtn = el('button', { class: 'primary', onclick: () => dlg.close() }, 'OK');
+    const body = el('p', {}, message);
+    dlg = buildModal(body, [okBtn]);
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(); });
+    dlg.showModal();
+    okBtn.focus();
+  });
+}
+
+function modalConfirm(message, opts = {}) {
+  const okLabel = opts.okLabel || 'OK';
+  const cancelLabel = opts.cancelLabel || 'Avbryt';
+  const danger = !!opts.danger;
+  return new Promise(resolve => {
+    let dlg, result = false;
+    const cancelBtn = el('button', { onclick: () => { result = false; dlg.close(); } }, cancelLabel);
+    const okBtn = el('button', {
+      class: danger ? 'danger' : 'primary',
+      onclick: () => { result = true; dlg.close(); },
+    }, okLabel);
+    const body = el('p', {}, message);
+    dlg = buildModal(body, [cancelBtn, okBtn]);
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(result); });
+    dlg.showModal();
+    okBtn.focus();
+  });
+}
+
+function modalPrompt(message, defaultValue = '', opts = {}) {
+  const okLabel = opts.okLabel || 'OK';
+  const cancelLabel = opts.cancelLabel || 'Avbryt';
+  return new Promise(resolve => {
+    let dlg, result = null;
+    const inp = el('input', { type: 'text', value: defaultValue });
+    const body = el('div', {},
+      el('p', {}, message),
+      inp
+    );
+    const cancelBtn = el('button', { onclick: () => { result = null; dlg.close(); } }, cancelLabel);
+    const okBtn = el('button', { class: 'primary', onclick: () => { result = inp.value; dlg.close(); } }, okLabel);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); result = inp.value; dlg.close(); }
+    });
+    dlg = buildModal(body, [cancelBtn, okBtn]);
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(result); });
+    dlg.showModal();
+    inp.focus();
+    inp.select();
+  });
+}
+
 // === State =================================================================
 
 let state = emptyState();
@@ -182,16 +249,16 @@ function showShell() {
   }
 }
 
-function doInlineRename() {
+async function doInlineRename() {
   if (readonly || !state.name) return;
   const oldName = state.name;
-  const raw = prompt('Nytt namn för din tippning:', oldName);
+  const raw = await modalPrompt('Nytt namn för din tippning:', oldName);
   if (raw == null) return;
   const newName = raw.trim();
-  if (!newName) { alert('Namnet får inte vara tomt.'); return; }
+  if (!newName) { await modalAlert('Namnet får inte vara tomt.'); return; }
   if (newName === oldName) return;
   if (existsLocal(newName)) {
-    alert(`Namnet "${newName}" är redan upptaget.`);
+    await modalAlert(`Namnet "${newName}" är redan upptaget.`);
     return;
   }
   renameLocal(oldName, newName);
@@ -206,10 +273,10 @@ function showSharedBanner() {
   // Svenskt genitiv: namn på s/x/z får inget extra s ("Markus tippning", inte "Markuss")
   const suffix = /[sxzSXZ]$/.test(owner) ? '' : 's';
   sect.querySelector('.shared-title').textContent = `Du tittar på ${owner}${suffix} tippning`;
-  sect.querySelector('#fork-btn').addEventListener('click', () => {
-    if (!confirm('Skapa en egen kopia av den här tippningen att redigera?')) return;
-    const newName = prompt('Vad heter du?', '');
-    if (!newName) return;
+  sect.querySelector('#fork-btn').addEventListener('click', async () => {
+    if (!await modalConfirm('Skapa en egen kopia av den här tippningen att redigera?')) return;
+    const newName = await modalPrompt('Vad heter du?', '');
+    if (!newName || !newName.trim()) return;
     state = { ...state, name: newName.trim() };
     readonly = false; sharedFromName = null;
     saveLocal(state);
@@ -217,7 +284,7 @@ function showSharedBanner() {
   });
   sect.querySelector('#copy-link-btn').addEventListener('click', async () => {
     const ok = await copyToClipboard(location.href);
-    alert(ok ? 'Länken kopierad!' : 'Kunde inte kopiera. Markera URL:en manuellt.');
+    await modalAlert(ok ? 'Länken kopierad!' : 'Kunde inte kopiera. Markera URL:en manuellt.');
   });
   $('#app').appendChild(tpl);
 }
@@ -237,36 +304,40 @@ function renderSavedRow(name) {
     readonly = false;
     go('/grupper');
   };
-  const askName = (prompt_text, defaultVal) => {
-    const raw = prompt(prompt_text, defaultVal);
-    if (raw == null) return null; // cancelled
+  const askName = async (text, defaultVal) => {
+    const raw = await modalPrompt(text, defaultVal);
+    if (raw == null) return null;
     const trimmed = raw.trim();
-    if (!trimmed) { alert('Namnet får inte vara tomt.'); return null; }
+    if (!trimmed) { await modalAlert('Namnet får inte vara tomt.'); return null; }
     return trimmed;
   };
-  const doRename = () => {
-    const newName = askName('Nytt namn för tippningen:', name);
+  const doRename = async () => {
+    const newName = await askName('Nytt namn för tippningen:', name);
     if (!newName || newName === name) return;
     if (existsLocal(newName)) {
-      alert(`Namnet "${newName}" är redan upptaget.`);
+      await modalAlert(`Namnet "${newName}" är redan upptaget.`);
       return;
     }
     renameLocal(name, newName);
     if (state.name === name) state.name = newName;
     renderStart();
   };
-  const doCopy = () => {
-    const newName = askName(`Kopiera "${name}" till nytt namn:`, name + ' (kopia)');
+  const doCopy = async () => {
+    const newName = await askName(`Kopiera "${name}" till nytt namn:`, name + ' (kopia)');
     if (!newName) return;
     if (existsLocal(newName)) {
-      alert(`Namnet "${newName}" är redan upptaget.`);
+      await modalAlert(`Namnet "${newName}" är redan upptaget.`);
       return;
     }
     copyLocal(name, newName);
     renderStart();
   };
-  const doRemove = () => {
-    if (!confirm(`Ta bort tippningen "${name}"? Det går inte att ångra.`)) return;
+  const doRemove = async () => {
+    const ok = await modalConfirm(
+      `Ta bort tippningen "${name}"? Det går inte att ångra.`,
+      { okLabel: 'Ta bort', danger: true }
+    );
+    if (!ok) return;
     removeLocal(name);
     if (state.name === name) state = emptyState();
     renderStart();
@@ -356,15 +427,15 @@ function randomFillUntipped() {
   return n;
 }
 
-function handleRandomClick() {
+async function handleRandomClick() {
   const groupLeft = GROUP_MATCHES.length - countFinished(state.group);
   const koLeft = KO_MATCHES.length - countFinished(state.ko);
   const total = groupLeft + koLeft;
   if (total === 0) {
-    alert('Allt är redan tippat!');
+    await modalAlert('Allt är redan tippat!');
     return;
   }
-  if (!confirm(`Slumpa resultat för ${total} otippade matcher?`)) return;
+  if (!await modalConfirm(`Slumpa resultat för ${total} otippade matcher?`, { okLabel: 'Slumpa' })) return;
   randomFillUntipped();
   render();
 }

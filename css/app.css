@@ -105,7 +105,7 @@ ul.saved-list { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex;
   padding: 0.55rem 0.7rem; border-radius: var(--radius-sm);
   font-size: 1rem;
 }
-.form-grid input:focus { outline: 2px solid var(--accent-2); outline-offset: 1px; }
+.form-grid input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 button {
   background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
   padding: 0.55rem 0.95rem; border-radius: var(--radius-sm);
@@ -114,6 +114,8 @@ button {
 button:hover { background: #283041; }
 button.primary { background: var(--accent); color: #1a1404; border-color: #d39400; font-weight: 700; }
 button.primary:hover { background: #ffc746; }
+button.danger { background: #ef4444; color: #fff; border-color: #b91c1c; font-weight: 700; }
+button.danger:hover { background: #f87171; }
 .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
 .muted { color: var(--muted); }
@@ -360,6 +362,39 @@ table.standings .pos { width: 1.5em; color: var(--muted); }
   background: var(--bg); color: var(--muted);
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 0.5rem; font-family: monospace; font-size: 0.85rem;
+}
+
+/* Modaler */
+dialog.modal {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.4rem;
+  max-width: 480px;
+  min-width: 280px;
+  width: calc(100% - 2rem);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  font-family: inherit;
+}
+dialog.modal::backdrop { background: rgba(0,0,0,0.6); }
+dialog.modal p { margin: 0 0 1rem; line-height: 1.45; }
+dialog.modal input[type="text"] {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  font-family: inherit;
+}
+dialog.modal input[type="text"]:focus {
+  outline: 2px solid var(--accent); outline-offset: 1px;
+}
+.modal-actions {
+  display: flex; gap: 0.5rem; justify-content: flex-end;
 }
 
 .notice { padding: 0.75rem 1rem; border-radius: var(--radius-sm); }
