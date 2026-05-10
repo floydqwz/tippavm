@@ -417,6 +417,8 @@ function makeScoreInput(m, side, value) {
   return input;
 }
 
+let advanceTimer = null;
+
 function onScoreInput(e) {
   if (readonly) return;
   const num = parseInt(e.target.dataset.num, 10);
@@ -432,6 +434,22 @@ function onScoreInput(e) {
   else bucket[num] = updated;
   scheduleSave();
 
+  // Auto-fokus: när användaren skrivit en siffra (0–9) hoppar vi vidare till
+  // nästa scoreruta efter en kort paus. Pausen ger plats för tvåsiffriga
+  // resultat (10+); skriver man en till siffra inom 250 ms återställs timern.
+  if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+  if (/^[0-9]$/.test(raw)) {
+    advanceTimer = setTimeout(() => {
+      // Hoppa bara om användaren fortfarande står kvar i samma ruta
+      // (annars klev de vidare själva och vi vill inte bråka).
+      const a = document.activeElement;
+      if (a && a.classList && a.classList.contains('score')
+          && a.dataset.num === String(num) && a.dataset.side === side) {
+        focusNextScore(num, side);
+      }
+    }, 250);
+  }
+
   // Re-render only the affected group card (for live standings)
   if (isGroup) {
     const m = MATCHES.find(x => x.num === num);
@@ -441,6 +459,17 @@ function onScoreInput(e) {
     // Slutspel: rendera om hela slutspelsvyn för att propagera
     rerenderKnockout();
   }
+}
+
+function focusNextScore(num, side) {
+  const inputs = [...document.querySelectorAll('input.score')]
+    .filter(i => !i.disabled && !i.readOnly);
+  const idx = inputs.findIndex(i =>
+    i.dataset.num === String(num) && i.dataset.side === side);
+  if (idx < 0 || idx === inputs.length - 1) return;
+  const next = inputs[idx + 1];
+  next.focus();
+  next.select();
 }
 
 function rerenderGroup(groupId) {
