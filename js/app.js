@@ -201,24 +201,21 @@ function render() {
     sharedFromName = decoded.name;
     readonly = true;
     showShell();
-    showSharedBanner();
     renderGroups();
     return;
   }
-  if (route.type === 'page') {
+  // Bara explicit besök på startsidan släpper delningsläget — annars hänger
+  // readonly+sharedFromName med när användaren klickar mellan flikarna i en
+  // delad vy.
+  if (route.path === '/') {
     readonly = false;
     sharedFromName = null;
-  }
-  // Startsidan visar formuläret, övriga vyer fungerar även utan satt namn –
-  // vi auto-initierar då en tippning under ett standardnamn så användaren
-  // kan börja tippa direkt och döpa om sin tippning när som helst.
-  if (route.path === '/') {
     showShell();
     renderStart();
     highlightTab('/');
     return;
   }
-  if (!state.name) ensureDefaultState();
+  if (!readonly && !state.name) ensureDefaultState();
   showShell();
   const fn = routes[route.path] || renderGroups;
   fn();
@@ -240,19 +237,22 @@ function ensureDefaultState() {
 }
 
 function showShell() {
-  // Tabs alltid synliga; "who"-delen visar ett namn när vi har ett.
+  // Tabs alltid synliga; "who"-delen visar antingen vem som tippar (egen vy)
+  // eller vems tippning man tittar på (delad vy).
   const who = $('#who');
   who.innerHTML = '';
-  if (state.name) {
-    const nameEl = readonly
-      ? el('span', { class: 'name' }, state.name)
-      : el('button', {
-          class: 'name-link',
-          onclick: doInlineRename,
-          title: 'Klicka för att byta namn på tippningen',
-        }, state.name);
+  if (readonly && sharedFromName) {
+    const owner = sharedFromName;
+    const suffix = /[sxzSXZ]$/.test(owner) ? '' : 's';
+    who.appendChild(el('span', {}, 'Visar ',
+      el('span', { class: 'name' }, `${owner}${suffix} tippning`)));
+  } else if (state.name) {
+    const nameEl = el('button', {
+      class: 'name-link',
+      onclick: doInlineRename,
+      title: 'Klicka för att byta namn på tippningen',
+    }, state.name);
     who.appendChild(el('span', {}, 'Tippar som: ', nameEl));
-    if (readonly) who.appendChild(el('span', { class: 'badge' }, 'delad'));
   }
 }
 
@@ -452,6 +452,10 @@ async function handleRandomClick() {
 }
 
 function renderProgressBanner() {
+  // I delad vy är progress-banner mest brus — antingen är allt klart (då är
+  // den helt onödig) eller så ser man redan på resultaten hur långt ägaren
+  // kommit. Hoppa över helt.
+  if (readonly) return null;
   const totalDone = countFinished(state.group) + countFinished(state.ko);
   const total = MATCHES.length;
   const left = total - totalDone;
@@ -460,7 +464,7 @@ function renderProgressBanner() {
     el('span', {}, `${totalDone} / ${total} matcher tippade`),
     el('div', { class: 'progress-bar' }, el('div', { style: `width: ${pct}%` })),
     el('span', { class: 'small muted' }, `${pct}%`),
-    !readonly && left > 0 && el('button', {
+    left > 0 && el('button', {
       class: 'random-btn',
       onclick: handleRandomClick,
       title: 'Slumpa resultat för alla matcher du inte har tippat',
@@ -472,9 +476,9 @@ function renderProgressBanner() {
 
 function renderGroups() {
   const app = $('#app');
-  if (!readonly) app.innerHTML = '';
+  app.innerHTML = ''; if (readonly) showSharedBanner();
 
-  app.appendChild(renderProgressBanner());
+  { const pb = renderProgressBanner(); if (pb) app.appendChild(pb); }
 
   const ranking = thirdPlaceRanking(state.group);
   const advancingThirds = ranking ? new Set(ranking.slice(0, 8).map(r => r.group)) : null;
@@ -761,9 +765,9 @@ const BRACKET_ORDER = {
 
 function renderKnockout() {
   const app = $('#app');
-  if (!readonly) app.innerHTML = '';
+  app.innerHTML = ''; if (readonly) showSharedBanner();
 
-  app.appendChild(renderProgressBanner());
+  { const pb = renderProgressBanner(); if (pb) app.appendChild(pb); }
 
   if (!allGroupsComplete(state.group)) {
     app.appendChild(el('div', { class: 'card notice info cta' },
@@ -946,14 +950,20 @@ function renderShareCard() {
 
 function renderSummary() {
   const app = $('#app');
-  if (!readonly) app.innerHTML = '';
+  app.innerHTML = ''; if (readonly) showSharedBanner();
 
-  // Dela-länk — alltid tillgänglig, även för halvtippade brackets.
+  // I delad vy: byt fokus från "din tippning" till "{ägare}s tippning".
+  const ownerLabel = readonly && sharedFromName ? sharedFromName : null;
+  const enligt = ownerLabel ? `enligt ${ownerLabel}` : 'enligt dig';
+
+  // Dela-länk visas bara för egen tippning, aldrig för en delad.
   if (!readonly) app.appendChild(renderShareCard());
 
   if (!allGroupsComplete(state.group)) {
     app.appendChild(el('div', { class: 'card notice info' },
-      'Tippa klart gruppspelet och slutspelet så visas världsmästaren och pallen här.'));
+      ownerLabel
+        ? `${ownerLabel} har inte tippat klart slutspelet ännu.`
+        : 'Tippa klart gruppspelet och slutspelet så visas världsmästaren och pallen här.'));
     return;
   }
 
@@ -971,7 +981,7 @@ function renderSummary() {
     const champCard = el('section', { class: 'card' },
       el('div', { class: 'champion' },
         el('span', { class: 'fi fi-' + TEAMS[champion].iso }),
-        el('div', { class: 'label' }, 'Världsmästare 2026 enligt dig'),
+        el('div', { class: 'label' }, `Världsmästare 2026 ${enligt}`),
         el('h2', {}, teamName(champion))
       )
     );
@@ -989,7 +999,9 @@ function renderSummary() {
     }
   } else {
     app.appendChild(el('div', { class: 'card notice info' },
-      'Tippa klart hela slutspelet (inklusive finalen) för att se vem du tror blir världsmästare.'));
+      ownerLabel
+        ? `${ownerLabel} har inte tippat klart finalen ännu.`
+        : 'Tippa klart hela slutspelet (inklusive finalen) för att se vem du tror blir världsmästare.'));
   }
 
 
@@ -1012,7 +1024,7 @@ function renderSummary() {
       )
     );
     app.appendChild(el('section', { class: 'card' },
-      el('h3', {}, 'Flest mål enligt din tippning'),
+      el('h3', {}, `Flest mål ${enligt}`),
       list
     ));
   }
