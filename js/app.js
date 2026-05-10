@@ -387,7 +387,7 @@ function renderThirdsCard(ranking) {
   const card = el('section', { class: 'card' });
   card.appendChild(el('h3', {}, 'Bästa treor'));
   card.appendChild(el('p', { class: 'muted small' },
-    'De åtta bästa treorna går vidare till slutspelet — övriga fyra åker hem. Rangordning: poäng → målskillnad → gjorda mål → grupp (lottning).'));
+    'Topp 8 går vidare till slutspelet, övriga fyra åker hem. Rangordning: poäng, målskillnad, gjorda mål, lottning.'));
   const t = el('table', { class: 'standings thirds-table' },
     el('thead', {}, el('tr', {},
       el('th', { class: 'pos' }, '#'),
@@ -400,12 +400,7 @@ function renderThirdsCard(ranking) {
   );
   const body = el('tbody');
   ranking.forEach((r, i) => {
-    if (i === 8) {
-      body.appendChild(el('tr', { class: 'cutoff' },
-        el('td', { colspan: '6' }, '— gränsen mellan vidare och hem —')
-      ));
-    }
-    const cls = i < 8 ? 'qualified' : 'eliminated';
+    const cls = (i < 8 ? 'qualified' : 'eliminated') + (i === 8 ? ' first-out' : '');
     body.appendChild(el('tr', { class: cls },
       el('td', { class: 'pos' }, String(i+1)),
       el('td', {}, r.group),

@@ -183,13 +183,17 @@ table.thirds-table th:nth-child(2), table.thirds-table td:nth-child(2) { width: 
 table.standings tr.qualified td { color: var(--win); }
 table.standings tr.third td { color: var(--accent); }
 table.standings tr.eliminated td { color: var(--muted); }
-table.standings tr.cutoff td {
-  color: var(--accent); border-top: 1px dashed var(--accent);
-  text-align: center; font-style: italic; padding: 0.45rem 0.4rem;
-  font-size: 0.78rem; letter-spacing: 0.04em;
-}
 table.thirds-table { margin-top: 0.6rem; }
-table.thirds-table tr.eliminated { opacity: 0.65; }
+table.thirds-table tr.eliminated { opacity: 0.7; }
+/* Tydlig avgränsning mellan #8 (sist vidare) och #9 (först hem). */
+table.thirds-table tr.first-out td {
+  border-top: 2px solid var(--accent);
+  padding-top: 0.45rem;
+}
+table.thirds-table tr.first-out + tr td,
+table.thirds-table tr.first-out ~ tr td {
+  /* nothing extra; resten styrs av .eliminated */
+}
 table.standings .pos { width: 1.5em; color: var(--muted); }
 
 .matches { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.5rem; }
