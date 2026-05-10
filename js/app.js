@@ -493,12 +493,12 @@ function renderThirdsCard(ranking) {
     'Topp 8 går vidare till slutspelet, övriga fyra åker hem. Rangordning: poäng, målskillnad, gjorda mål, lottning.'));
   const t = el('table', { class: 'standings thirds-table' },
     el('thead', {}, el('tr', {},
-      el('th', { class: 'pos' }, '#'),
-      el('th', {}, 'Grupp'),
+      el('th', { class: 'pos', title: 'Placering' }, '#'),
+      el('th', { title: 'Grupp' }, 'Grupp'),
       el('th', { class: 'team-cell' }, 'Lag'),
-      el('th', {}, 'P'),
-      el('th', { class: 'diff' }, '+/-'),
-      el('th', {}, 'GM'),
+      el('th', { title: 'Poäng' }, 'P'),
+      el('th', { class: 'diff', title: 'Målskillnad' }, 'MS'),
+      el('th', { title: 'Gjorda mål' }, 'GM'),
     ))
   );
   const body = el('tbody');
@@ -658,16 +658,16 @@ function updateGroupProgress() {
 function renderStandingsTable(rows, advancingThirds, groupId) {
   const t = el('table', { class: 'standings' });
   const head = el('thead', {}, el('tr', {},
-    el('th', { class: 'pos' }, '#'),
+    el('th', { class: 'pos', title: 'Placering' }, '#'),
     el('th', { class: 'team-cell' }, 'Lag'),
-    el('th', {}, 'M'),
-    el('th', {}, 'V'),
-    el('th', {}, 'O'),
-    el('th', {}, 'F'),
-    el('th', {}, 'GM'),
-    el('th', {}, 'IM'),
-    el('th', { class: 'diff' }, '+/-'),
-    el('th', {}, 'P')
+    el('th', { title: 'Spelade matcher' }, 'M'),
+    el('th', { title: 'Vinster' }, 'V'),
+    el('th', { title: 'Oavgjorda' }, 'O'),
+    el('th', { title: 'Förluster' }, 'F'),
+    el('th', { title: 'Gjorda mål' }, 'GM'),
+    el('th', { title: 'Insläppta mål' }, 'IM'),
+    el('th', { class: 'diff', title: 'Målskillnad' }, 'MS'),
+    el('th', { title: 'Poäng' }, 'P')
   ));
   t.appendChild(head);
   const body = el('tbody');
