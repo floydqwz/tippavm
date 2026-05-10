@@ -145,8 +145,7 @@ table.standings .pos { width: 1.6em; }
 table.standings th:not(.team-cell):not(.pos),
 table.standings td:not(.team-cell):not(.pos) { width: 2em; }
 /* +/- kan vara tre tecken (t.ex. "+12" eller "-9") så ge den lite mer */
-table.standings th:nth-last-child(2),
-table.standings td:nth-last-child(2) { width: 2.4em; }
+table.standings .diff { width: 2.4em; }
 table.thirds-table th:nth-child(2), table.thirds-table td:nth-child(2) { width: 2.8em; } /* "Grupp" */
 
 /* På smala skärmar: dölj V, O, F i gruppspels-tabellen för att ge utrymme åt

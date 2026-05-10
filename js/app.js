@@ -344,7 +344,7 @@ function renderThirdsCard(ranking) {
       el('th', {}, 'Grupp'),
       el('th', { class: 'team-cell' }, 'Lag'),
       el('th', {}, 'P'),
-      el('th', {}, '+/-'),
+      el('th', { class: 'diff' }, '+/-'),
       el('th', {}, 'GM'),
     ))
   );
@@ -361,7 +361,7 @@ function renderThirdsCard(ranking) {
       el('td', {}, r.group),
       el('td', { class: 'team-cell' }, flag(r.team), el('span', { class: 'tn' }, teamName(r.team))),
       el('td', {}, String(r.pts)),
-      el('td', {}, (r.gd > 0 ? '+' : '') + r.gd),
+      el('td', { class: 'diff' }, (r.gd > 0 ? '+' : '') + r.gd),
       el('td', {}, String(r.gf))
     ));
   });
@@ -527,7 +527,7 @@ function renderStandingsTable(rows, advancingThirds, groupId) {
     el('th', {}, 'F'),
     el('th', {}, 'GM'),
     el('th', {}, 'IM'),
-    el('th', {}, '+/-'),
+    el('th', { class: 'diff' }, '+/-'),
     el('th', {}, 'P')
   ));
   t.appendChild(head);
@@ -550,7 +550,7 @@ function renderStandingsTable(rows, advancingThirds, groupId) {
       el('td', {}, String(r.l)),
       el('td', {}, String(r.gf)),
       el('td', {}, String(r.ga)),
-      el('td', {}, (r.gd > 0 ? '+' : '') + r.gd),
+      el('td', { class: 'diff' }, (r.gd > 0 ? '+' : '') + r.gd),
       el('td', {}, el('strong', {}, String(r.pts)))
     ));
   });
