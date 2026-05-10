@@ -7,7 +7,7 @@
   --muted: #8a96a8;
   --accent: #ffb20f;
   --accent-2: #2dd4bf;
-  --win: #2dd4bf;
+  --win: #4ade80;
   --draw: #8a96a8;
   --shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 6px 16px rgba(0,0,0,0.25);
   --radius: 10px;
@@ -194,14 +194,11 @@ table.standings tr.third td { color: var(--accent); }
 table.standings tr.eliminated td { color: var(--muted); }
 table.thirds-table { margin-top: 0.6rem; }
 table.thirds-table tr.eliminated { opacity: 0.7; }
-/* Tydlig avgränsning mellan #8 (sist vidare) och #9 (först hem). */
-table.thirds-table tr.first-out td {
-  border-top: 2px solid var(--accent);
-  padding-top: 0.45rem;
-}
-table.thirds-table tr.first-out + tr td,
-table.thirds-table tr.first-out ~ tr td {
-  /* nothing extra; resten styrs av .eliminated */
+/* Tydlig, jämntjock avgränsare mellan #8 (sist vidare) och #9 (först hem). */
+table.thirds-table tr.divider td {
+  height: 2px; padding: 0;
+  background: var(--accent);
+  border: 0;
 }
 table.standings .pos { width: 1.5em; color: var(--muted); }
 

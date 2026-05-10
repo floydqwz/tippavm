@@ -432,7 +432,10 @@ function renderThirdsCard(ranking) {
   );
   const body = el('tbody');
   ranking.forEach((r, i) => {
-    const cls = (i < 8 ? 'qualified' : 'eliminated') + (i === 8 ? ' first-out' : '');
+    if (i === 8) {
+      body.appendChild(el('tr', { class: 'divider' }, el('td', { colspan: '6' })));
+    }
+    const cls = i < 8 ? 'qualified' : 'eliminated';
     body.appendChild(el('tr', { class: cls },
       el('td', { class: 'pos' }, String(i+1)),
       el('td', {}, r.group),
