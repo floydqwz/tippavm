@@ -4,7 +4,7 @@ import { standings, isGroupComplete, allGroupsComplete, resolveKnockout, thirdPl
 function countFinished(bucket) {
   return Object.values(bucket).filter(isFinished).length;
 }
-import { emptyState, loadLocal, saveLocal, encodeShare, decodeShare, shareUrl, copyToClipboard, listLocal } from './share.js';
+import { emptyState, loadLocal, saveLocal, encodeShare, decodeShare, shareUrl, copyToClipboard, listLocal, existsLocal, removeLocal, renameLocal, copyLocal } from './share.js';
 
 // === Hjälp =================================================================
 
@@ -198,6 +198,57 @@ function highlightTab(path) {
 
 // --- Startsida -------------------------------------------------------------
 
+function renderSavedRow(name) {
+  const open = () => {
+    state = loadLocal(name) || emptyState(name);
+    state.name = name;
+    readonly = false;
+    go('/grupper');
+  };
+  const askName = (prompt_text, defaultVal) => {
+    const raw = prompt(prompt_text, defaultVal);
+    if (raw == null) return null; // cancelled
+    const trimmed = raw.trim();
+    if (!trimmed) { alert('Namnet får inte vara tomt.'); return null; }
+    return trimmed;
+  };
+  const doRename = () => {
+    const newName = askName('Nytt namn för tippningen:', name);
+    if (!newName || newName === name) return;
+    if (existsLocal(newName)) {
+      alert(`Namnet "${newName}" är redan upptaget.`);
+      return;
+    }
+    renameLocal(name, newName);
+    if (state.name === name) state.name = newName;
+    renderStart();
+  };
+  const doCopy = () => {
+    const newName = askName(`Kopiera "${name}" till nytt namn:`, name + ' (kopia)');
+    if (!newName) return;
+    if (existsLocal(newName)) {
+      alert(`Namnet "${newName}" är redan upptaget.`);
+      return;
+    }
+    copyLocal(name, newName);
+    renderStart();
+  };
+  const doRemove = () => {
+    if (!confirm(`Ta bort tippningen "${name}"? Det går inte att ångra.`)) return;
+    removeLocal(name);
+    if (state.name === name) state = emptyState();
+    renderStart();
+  };
+  return el('li', { class: 'saved-row' },
+    el('button', { class: 'saved-name', onclick: open, title: 'Öppna tippningen' }, name),
+    el('div', { class: 'saved-actions' },
+      el('button', { class: 'icon-btn', onclick: doRename, title: 'Byt namn' }, '✎'),
+      el('button', { class: 'icon-btn', onclick: doCopy, title: 'Kopiera' }, '⎘'),
+      el('button', { class: 'icon-btn danger', onclick: doRemove, title: 'Ta bort' }, '✕'),
+    )
+  );
+}
+
 function renderStart() {
   const app = $('#app');
   app.innerHTML = '';
@@ -205,15 +256,14 @@ function renderStart() {
   app.appendChild(tpl);
 
   // Lista befintliga lokala tippningar
-  const names = listLocal();
+  const names = listLocal().sort((a, b) => a.localeCompare(b, 'sv'));
   if (names.length) {
+    const list = el('ul', { class: 'saved-list' },
+      ...names.map(n => renderSavedRow(n))
+    );
     const card = el('section', { class: 'card' },
       el('h2', {}, 'Fortsätt på en sparad tippning'),
-      el('div', { class: 'actions' },
-        ...names.map(n => el('button', {
-          onclick: () => { state = loadLocal(n) || emptyState(n); state.name = n; readonly = false; go('/grupper'); }
-        }, n))
-      )
+      list
     );
     app.appendChild(card);
   }

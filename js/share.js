@@ -37,6 +37,30 @@ export function listLocal() {
   return out;
 }
 
+export function existsLocal(name) {
+  return localStorage.getItem(STORAGE_PREFIX + name) != null;
+}
+
+export function removeLocal(name) {
+  localStorage.removeItem(STORAGE_PREFIX + name);
+}
+
+export function renameLocal(oldName, newName) {
+  const s = loadLocal(oldName);
+  if (!s) return false;
+  s.name = newName;
+  saveLocal(s);
+  if (oldName !== newName) removeLocal(oldName);
+  return true;
+}
+
+export function copyLocal(srcName, newName) {
+  const s = loadLocal(srcName);
+  if (!s) return false;
+  saveLocal({ ...s, name: newName });
+  return true;
+}
+
 function normalize(obj) {
   return {
     name: obj.name || '',
