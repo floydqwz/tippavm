@@ -319,7 +319,7 @@ function renderSavedRow(name) {
       return;
     }
     renameLocal(name, newName);
-    if (state.name === name) state.name = newName;
+    if (state.name === name) { state.name = newName; showShell(); }
     renderStart();
   };
   const doCopy = async () => {
@@ -339,7 +339,7 @@ function renderSavedRow(name) {
     );
     if (!ok) return;
     removeLocal(name);
-    if (state.name === name) state = emptyState();
+    if (state.name === name) { state = emptyState(); showShell(); }
     renderStart();
   };
   return el('li', { class: 'saved-row' },
