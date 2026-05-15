@@ -396,16 +396,45 @@ function renderStart() {
 
 // --- Slumpa --------------------------------------------------------------
 
-// Vikter ungefär kalibrerade mot historisk VM-statistik (~1.4 mål per lag/match).
-function randomGoals() {
-  const r = Math.random();
-  if (r < 0.22) return 0;
-  if (r < 0.55) return 1;
-  if (r < 0.80) return 2;
-  if (r < 0.92) return 3;
-  if (r < 0.97) return 4;
-  if (r < 0.99) return 5;
-  return 6;
+// FIFA-ranking-styrd slump: λ per lag bestäms av rankingdifferensen, mål
+// dras sedan från en Poisson-fördelning. Snittet (~1.45 mål/lag i en jämn
+// match) ligger nära historisk VM-statistik, men favoriter får högre λ
+// och underdogs lägre — så slumpen finns kvar men resultaten lutar åt rätt
+// håll.
+const RATING_BASE = 1.45;     // förväntade mål för ett genomsnittslag mot ett jämbördigt motstånd
+const RATING_SCALE = 0.18;    // hur många extra mål per 100 ranking-poäng övertag
+const RATING_FALLBACK = 1500; // om någon kod saknas i tabellen
+
+function teamRating(code) {
+  const t = code && TEAMS[code];
+  return (t && typeof t.pts === 'number') ? t.pts : RATING_FALLBACK;
+}
+
+// Knuth: enkel sampling från Poisson(λ). Räcker bra för små λ (<3).
+function poissonSample(lambda) {
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k - 1;
+}
+
+function ratedGoals(myPts, oppPts) {
+  const diff = (myPts - oppPts) / 100;
+  const lambda = Math.max(0.15, RATING_BASE + RATING_SCALE * diff);
+  return Math.min(6, poissonSample(lambda));
+}
+
+function randomScore(homeCode, awayCode) {
+  const h = teamRating(homeCode);
+  const a = teamRating(awayCode);
+  return [ratedGoals(h, a), ratedGoals(a, h)];
+}
+
+// Vinnarsannolikhet i straffläggning, lätt biased mot bättre rankat lag.
+// Sigmoid med liten lutning gör att jämna matcher hamnar nära 50/50.
+function penaltyHomeProb(homeCode, awayCode) {
+  const diff = (teamRating(homeCode) - teamRating(awayCode)) / 100;
+  return 1 / (1 + Math.exp(-0.15 * diff));
 }
 
 function randomFillUntipped() {
@@ -413,7 +442,7 @@ function randomFillUntipped() {
   let n = 0;
   for (const m of GROUP_MATCHES) {
     if (!isFinished(state.group[m.num])) {
-      state.group[m.num] = [randomGoals(), randomGoals()];
+      state.group[m.num] = randomScore(m.home, m.away);
       n++;
     }
   }
@@ -421,17 +450,19 @@ function randomFillUntipped() {
   // ev. behöver välja straffvinnare för att låsa winner till nästa rond.
   const koSorted = KO_MATCHES.slice().sort((a, b) => a.num - b.num);
   for (const m of koSorted) {
+    // Lös upp slot-platshållare (1A/W74/...) till faktiska landskoder så
+    // vi kan vikta målen efter ranking även i slutspelet.
+    const resolved = resolveKnockout({ ...state.group, ...state.ko, ...prefixedPen() });
+    const slot = resolved[m.num];
+    const home = slot?.home;
+    const away = slot?.away;
     if (!isFinished(state.ko[m.num])) {
-      state.ko[m.num] = [randomGoals(), randomGoals()];
+      state.ko[m.num] = randomScore(home, away);
       n++;
     }
     const p = state.ko[m.num];
-    if (p[0] === p[1] && !state.pen[m.num]) {
-      const r = resolveKnockout({ ...state.group, ...state.ko, ...prefixedPen() });
-      const slot = r[m.num];
-      if (slot && slot.home && slot.away) {
-        state.pen[m.num] = Math.random() < 0.5 ? slot.home : slot.away;
-      }
+    if (p[0] === p[1] && !state.pen[m.num] && home && away) {
+      state.pen[m.num] = Math.random() < penaltyHomeProb(home, away) ? home : away;
     }
   }
   scheduleSave();
